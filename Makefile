@@ -10,3 +10,9 @@ clean-testcache:
 test: clean-testcache	
 	go test -race -v -covermode=atomic -coverprofile=coverage.txt ./...
 	go tool cover -html=coverage.txt
+
+test-circleci: 
+	go test -race -covermode=atomic -coverprofile=coverage.txt ./...
+
+deps: 
+	go get -v -t -d ./...
