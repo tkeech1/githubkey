@@ -2,6 +2,7 @@ package githubkey
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -26,7 +27,7 @@ func Test_GetDeployKey(t *testing.T) {
 		keyTitle         string
 		repo             string
 		expectedResponse GithubKey
-		expectedError    error
+		expectedError    *GetKeyError
 	}{
 		"error": {
 			client: &ClientMock{
@@ -39,7 +40,6 @@ func Test_GetDeployKey(t *testing.T) {
 			keyTitle:         "testKeyTitle",
 			repo:             "test",
 			expectedResponse: GithubKey{},
-			expectedError:    fmt.Errorf("an error"),
 		},
 		"success": {
 			client: &ClientMock{
@@ -97,7 +97,9 @@ func Test_GetDeployKey(t *testing.T) {
 			t.Logf("Running test case: %s", name)
 			response, err := GetDeployKey(test.client, test.githubUsername, test.githubPassword, test.repo, test.keyTitle)
 			assert.Equal(t, test.expectedResponse, response)
-			assert.Equal(t, test.expectedError, err)
+			if err != nil {
+				assert.True(t, errors.As(err, &test.expectedError))
+			}
 		})
 	}
 }
@@ -109,7 +111,7 @@ func Test_DeleteDeployKey(t *testing.T) {
 		githubPassword string
 		repo           string
 		keyID          int64
-		expectedError  error
+		expectedError  *DeleteKeyError
 	}{
 		"error": {
 			client: &ClientMock{
@@ -121,7 +123,6 @@ func Test_DeleteDeployKey(t *testing.T) {
 			githubPassword: "test",
 			repo:           "test",
 			keyID:          1,
-			expectedError:  fmt.Errorf("an error"),
 		},
 		"success": {
 			client: &ClientMock{
@@ -158,7 +159,6 @@ func Test_DeleteDeployKey(t *testing.T) {
 			githubPassword: "test",
 			repo:           "test",
 			keyID:          1,
-			expectedError:  fmt.Errorf("could not delete KeyID 1"),
 		},
 	}
 
@@ -166,7 +166,9 @@ func Test_DeleteDeployKey(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			t.Logf("Running test case: %s", name)
 			err := DeleteDeployKey(test.client, test.githubUsername, test.githubPassword, test.repo, test.keyID)
-			assert.Equal(t, test.expectedError, err)
+			if err != nil {
+				assert.True(t, errors.As(err, &test.expectedError))
+			}
 		})
 	}
 }
@@ -181,7 +183,7 @@ func Test_CreateDeployKey(t *testing.T) {
 		newKey           string
 		readOnly         bool
 		expectedResponse GithubKey
-		expectedError    error
+		expectedError    *CreateKeyError
 	}{
 		"error": {
 			client: &ClientMock{
@@ -196,7 +198,6 @@ func Test_CreateDeployKey(t *testing.T) {
 			newKey:           "test",
 			readOnly:         true,
 			expectedResponse: GithubKey{},
-			expectedError:    fmt.Errorf("an error"),
 		},
 		"success": {
 			client: &ClientMock{
@@ -238,7 +239,6 @@ func Test_CreateDeployKey(t *testing.T) {
 			keyTitle:         "testKeyTitle",
 			repo:             "test",
 			expectedResponse: GithubKey{},
-			expectedError:    fmt.Errorf("http status code: 403"),
 		},
 	}
 
@@ -247,7 +247,9 @@ func Test_CreateDeployKey(t *testing.T) {
 			t.Logf("Running test case: %s", name)
 			response, err := CreateDeployKey(test.client, test.githubUsername, test.githubPassword, test.repo, test.keyTitle, test.newKey, test.readOnly)
 			assert.Equal(t, test.expectedResponse, response)
-			assert.Equal(t, test.expectedError, err)
+			if err != nil {
+				assert.True(t, errors.As(err, &test.expectedError))
+			}
 		})
 	}
 }

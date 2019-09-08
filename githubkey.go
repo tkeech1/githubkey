@@ -42,6 +42,33 @@ type GithubKey struct {
 	ReadOnly  bool   `json:"read_only"`
 }
 
+// GetKeyError is an error wrapper for get operations
+type GetKeyError struct {
+	err string
+}
+
+func (e *GetKeyError) Error() string {
+	return fmt.Sprintf("%s", e.err)
+}
+
+// DeleteKeyError is an error wrapper for delete
+type DeleteKeyError struct {
+	err string
+}
+
+func (e *DeleteKeyError) Error() string {
+	return fmt.Sprintf("%s", e.err)
+}
+
+// CreateKeyError is an error wrapper for create operations
+type CreateKeyError struct {
+	err string
+}
+
+func (e *CreateKeyError) Error() string {
+	return fmt.Sprintf("%s", e.err)
+}
+
 // Doer is an interface used to make testing easier
 type Doer interface {
 	Do(*http.Request) (*http.Response, error)
@@ -53,12 +80,12 @@ func GetDeployKey(client Doer, githubUsername, githubPassword, repo, keyTitle st
 	req.SetBasicAuth(githubUsername, githubPassword)
 	resp, err := client.Do(req)
 	if err != nil {
-		return GithubKey{}, err
+		return GithubKey{}, fmt.Errorf("unable to get keys from github: %w", &GetKeyError{err: err.Error()})
 	}
 	defer resp.Body.Close()
 	bodyBytes, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		return GithubKey{}, err
+		return GithubKey{}, fmt.Errorf("unable to read response: %w", &GetKeyError{err: err.Error()})
 	}
 
 	githubKeys, err := unmarshalGithubKeys(bodyBytes)
@@ -82,7 +109,7 @@ func DeleteDeployKey(client Doer, githubUsername, githubPassword, repo string, k
 	req.SetBasicAuth(githubUsername, githubPassword)
 	resp, err := client.Do(req)
 	if err != nil {
-		return err
+		return fmt.Errorf("unable to delete key id %d: %w", keyID, &DeleteKeyError{err: err.Error()})
 	}
 	defer resp.Body.Close()
 
@@ -90,7 +117,7 @@ func DeleteDeployKey(client Doer, githubUsername, githubPassword, repo string, k
 		return nil
 	}
 
-	return fmt.Errorf("could not delete KeyID %d", keyID)
+	return fmt.Errorf("unable to delete key id %d: %w", keyID, &DeleteKeyError{err: ""})
 }
 
 // CreateDeployKey creates a new GitHub deploy key.
@@ -107,22 +134,22 @@ func CreateDeployKey(client Doer, githubUsername, githubPassword, repo, keyTitle
 	req.SetBasicAuth(githubUsername, githubPassword)
 	resp, err := client.Do(req)
 	if err != nil {
-		return GithubKey{}, err
+		return GithubKey{}, fmt.Errorf("error creating key during http request: %w", &CreateKeyError{err: err.Error()})
 	}
 	defer resp.Body.Close()
 
 	bodyBytes, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		return GithubKey{}, err
+		return GithubKey{}, fmt.Errorf("error reading response: %w", &CreateKeyError{err: err.Error()})
 	}
 	newGithubKey, err := unmarshalGithubKey(bodyBytes)
 	if err != nil {
-		return GithubKey{}, err
+		return GithubKey{}, fmt.Errorf("error unmarshalling response: %w", &CreateKeyError{err: err.Error()})
 	}
 
 	if resp.StatusCode == 201 {
 		return newGithubKey, nil
 	}
 
-	return GithubKey{}, fmt.Errorf("http status code: %d", resp.StatusCode)
+	return GithubKey{}, fmt.Errorf("error http status code %d: %w", resp.StatusCode, &CreateKeyError{err: ""})
 }
