@@ -6,7 +6,8 @@ A library to create and delete Github SSH deploy keys.
 
 Usage
 
-```package main
+```
+package main
 
 import (
 	"flag"
@@ -38,7 +39,7 @@ func main() {
 	}
 
     // if the key exists, delete it before creating a new key
-	if key.ID >= 0 {
+    if key.ID >= 0 {
 		err := githubkey.DeleteDeployKey(client, githubUsername, githubPassword, repo, key.ID)
 		if err != nil {
 			log.Fatal(err)
@@ -57,4 +58,5 @@ func main() {
 	log.Printf("Key Name: %s\n", githubKey.Title)
 	log.Printf("New Key ID: %d\n", githubKey.ID)
 	log.Printf("Read-only: %t\n", githubKey.ReadOnly)
-}```
+}
+```
